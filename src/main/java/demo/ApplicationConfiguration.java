@@ -2,7 +2,6 @@ package demo;
 
 import akka.actor.ActorSystem;
 import akka.actor.Props;
-import akka.cluster.Cluster;
 import demo.akka.actor.ApplicationActor;
 import demo.akka.actor.SenderActor;
 import demo.akka.util.Route;
@@ -42,10 +41,30 @@ class ApplicationConfiguration {
 
     @Bean
     public Config akkaConfiguration() {
-        final Config config = ConfigFactory.load();
         final String port = System.getProperty("server.akka.port");
-        LOG.info("Port info: " + port);
-        return ConfigFactory.parseString("akka.remote.netty.tcp.port=" + port)
-                .withFallback(config);
+        final String host = System.getProperty("server.akka.host");
+
+        LOG.info("Port info: " + port + "\tHost info: " + host);
+
+        final StringBuilder seedNodes = new StringBuilder("akka.cluster.seed-nodes = [");
+
+        seedNodes.append("\"akka.tcp://ClusterSystem@")
+                .append(System.getProperty("local.node.host")).append(":")
+                .append(System.getProperty("local.node.port")).append("\"").append(",\n");
+
+        seedNodes.append("\"akka.tcp://ClusterSystem@")
+                .append(System.getProperty("remote.node.host")).append(":")
+                .append(System.getProperty("remote.node.port")).append("\"");
+
+        seedNodes.append("]\n");
+
+        final StringBuilder confProps = new StringBuilder();
+        confProps.append("akka.remote.netty.tcp.port=")
+                .append(port).append("\n")
+                .append("akka.remote.netty.tcp.host=")
+                .append(host).append("\n")
+                .append(seedNodes);
+
+        return ConfigFactory.parseString(confProps.toString()).withFallback(ConfigFactory.load());
     }
 }

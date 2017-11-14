@@ -38,8 +38,17 @@ task wrapper(type: Wrapper) {
 }
 
 task setPort{
-    doLast {
+//    doLast {
+        bootRun.systemProperty 'server.host', appHost
         bootRun.systemProperty 'server.port', appPort
+
+        bootRun.systemProperty 'server.akka.host', akkaHost
         bootRun.systemProperty 'server.akka.port', akkaPort
-    }
+
+        bootRun.systemProperty 'local.node.host', localNodeHost
+        bootRun.systemProperty 'local.node.port', localNodePort
+
+        bootRun.systemProperty 'remote.node.host', remoteNodeHost
+        bootRun.systemProperty 'remote.node.port', remoteNodePort
+//    }
 }
