@@ -7,9 +7,13 @@ import java.util.Set;
  */
 public class SystemData {
 
+    public enum State {
+        ASSOCIATED, DISASSOCIATED, REMOVED
+    }
+
     private Set<Integer> users;
 
-    private boolean reached;
+    private State state;
 
     public Set<Integer> getUsers() {
         return users;
@@ -19,11 +23,15 @@ public class SystemData {
         this.users = users;
     }
 
-    public boolean isReached() {
-        return reached;
+    public State getState() {
+        return state;
     }
 
-    public void setReached(boolean reached) {
-        this.reached = reached;
+    public void setState(State state) {
+        this.state = state;
+    }
+
+    public boolean isReached() {
+        return (state == State.ASSOCIATED);
     }
 }

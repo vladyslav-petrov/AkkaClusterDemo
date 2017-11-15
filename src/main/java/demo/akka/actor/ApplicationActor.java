@@ -4,8 +4,8 @@ import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
 import akka.actor.UntypedActor;
 import akka.cluster.Cluster;
-import akka.cluster.ClusterEvent;
 import akka.cluster.ClusterEvent.MemberEvent;
+import akka.cluster.ClusterEvent.MemberRemoved;
 import akka.cluster.ClusterEvent.MemberUp;
 import akka.cluster.Member;
 import akka.cluster.pubsub.DistributedPubSub;
@@ -76,56 +76,62 @@ public class ApplicationActor extends UntypedActor {
     @Override
     public void onReceive(Object msg) throws Throwable {
         if (msg instanceof MemberUp) {
-            MemberUp message = (MemberUp) msg;
-            Member member = message.member();
+            MemberUp event = (MemberUp) msg;
+            Member member = event.member();
             final String memberAddress = member.address().toString();
 
-            if (!memberAddress.equals(cluster.selfAddress().toString())) {
+            if (!ACTOR_SYSTEMS.containsKey(memberAddress)) {
                 SystemData data = new SystemData();
-                data.setReached(true);
+                data.setState(SystemData.State.ASSOCIATED);
                 ACTOR_SYSTEMS.put(memberAddress, data);
+                LOG.info("================ MemberUp event. Node is ready");
             }
-
-            LOG.info("[Member up event] - member: " + message.member().toString());
         } else if (msg instanceof DisassociatedEvent) {
-            DisassociatedEvent message = (DisassociatedEvent) msg;
-            final String memberAddress = message.remoteAddress().toString();
+            DisassociatedEvent event = (DisassociatedEvent) msg;
+            final String memberAddress = event.remoteAddress().toString();
 
             if (ACTOR_SYSTEMS.containsKey(memberAddress)) {
                 SystemData data = ACTOR_SYSTEMS.get(memberAddress);
                 if (data.isReached()) {
-                    LOG.info("================ DisassociatedEvent. Users will be removed");
-                    data.setReached(false);
+                    data.setState(SystemData.State.DISASSOCIATED);
+                    LOG.info("================ DisassociatedEvent. Connection to remote host is null");
                 }
             }
         } else if (msg instanceof AssociatedEvent) {
-            AssociatedEvent message = (AssociatedEvent) msg;
-            final String memberAddress = message.remoteAddress().toString();
+            AssociatedEvent event = (AssociatedEvent) msg;
+            final String memberAddress = event.remoteAddress().toString();
 
             if (ACTOR_SYSTEMS.containsKey(memberAddress)) {
                 SystemData data = ACTOR_SYSTEMS.get(memberAddress);
                 if (!data.isReached()) {
+                    data.setState(SystemData.State.ASSOCIATED);
                     LOG.info("================ AssociatedEvent. Node is ready to receive new requests");
-                    data.setReached(true);
                 }
+            }
+        } else if (msg instanceof MemberRemoved) {
+            MemberRemoved event = (MemberRemoved) msg;
+            final String memberAddress = event.member().address().toString();
+
+            if (ACTOR_SYSTEMS.containsKey(memberAddress)) {
+                ACTOR_SYSTEMS.remove(memberAddress);
+                LOG.info("================ MemberRemoved event. Node is dead");
             }
         }
 
 
 
 
-
-
-        else if (msg instanceof ClusterEvent.MemberRemoved) {
-            Member member = ((ClusterEvent.MemberRemoved) msg).member();
-            LOG.info("[Member removed event] - member: " + member.toString());
-
-            final String systemName = member.address().toString();
-            for (Integer user : getSystemUsers(systemName)) {
-                USERS.remove(user);
-                LOG.info("User [{}] removed from {} actor system", user, systemName);
-            }
-        } else if (msg instanceof NewUserMessage) {
+//        else if (msg instanceof MemberRemoved) {
+//            Member member = ((MemberRemoved) msg).member();
+//            LOG.info("[Member removed event] - member: " + member.toString());
+//
+//            final String systemName = member.address().toString();
+//            for (Integer user : getSystemUsers(systemName)) {
+//                USERS.remove(user);
+//                LOG.info("User [{}] removed from {} actor system", user, systemName);
+//            }
+//        }
+        else if (msg instanceof NewUserMessage) {
             NewUserMessage message = (NewUserMessage) msg;
             USERS.put(message.getMemberId(), message.getSystemId());
         } else if (msg instanceof NewSystemUserMessage) {
