@@ -106,7 +106,7 @@ public class MainController {
         for (Map.Entry<Integer, String> entry : ApplicationActor.getUsers().entrySet()) {
             builder.append("<tr>")
                     .append("<td>").append(entry.getKey()).append("</td>")
-                    .append("<td>").append(entry.getValue()).append("</td>")
+                    .append("</td>").append(entry.getValue()).append("</td>")
                     .append("</tr>");
         }
         builder.append("</table>");
