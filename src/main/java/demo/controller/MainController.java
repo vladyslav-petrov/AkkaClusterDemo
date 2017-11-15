@@ -1,5 +1,6 @@
 package demo.controller;
 
+import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
 import akka.actor.Props;
 import akka.cluster.Cluster;
@@ -42,8 +43,9 @@ public class MainController {
 
         NewSystemUserMessage systemUserMessage = new NewSystemUserMessage();
         systemUserMessage.setMemberId(memberId);
-        systemUserMessage.setActorRef(Route.getActorRef(ApplicationActor.class, ""));
-        sender.send(systemUserMessage);
+
+        actorSystem.actorSelection(Route.getActorRef(ApplicationActor.class, "")).tell(
+                systemUserMessage, ActorRef.noSender());
 
         if (ApplicationActor.getActorSystem(memberId) == null) {
             NewUserMessage message = new NewUserMessage();

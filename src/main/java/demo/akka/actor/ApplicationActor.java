@@ -67,9 +67,11 @@ public class ApplicationActor extends UntypedActor {
         } else if (msg instanceof NewSystemUserMessage) {
             NewSystemUserMessage message = (NewSystemUserMessage) msg;
             SYSTEM_USERS.add(message.getMemberId());
+            LOG.info("User {} was added to system users", message.getMemberId());
         } else if (msg instanceof DeleteSystemUserMessage) {
             DeleteSystemUserMessage message = (DeleteSystemUserMessage) msg;
             SYSTEM_USERS.remove(message.getMemberId());
+            LOG.info("User {} was removed from system users", message.getMemberId());
         } else if (msg instanceof CleanDataMessage) {
             CleanDataMessage message = (CleanDataMessage) msg;
             USERS.remove(message.getMemberId());

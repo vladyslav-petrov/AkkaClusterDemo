@@ -3,8 +3,7 @@ package demo.akka.messages;
 /**
  * @author <a href="mailto:vladyslav@dsi.io">Vladyslav Petrov</a>
  */
-@DistributedMessage(action = Action.SEND_TO_NODE)
-public class NewSystemUserMessage extends AbstractMessage {
+public class NewSystemUserMessage {
 
     private int memberId;
 
