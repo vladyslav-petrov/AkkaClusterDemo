@@ -10,6 +10,9 @@ import akka.cluster.pubsub.DistributedPubSub;
 import akka.cluster.pubsub.DistributedPubSubMediator;
 import akka.event.Logging;
 import akka.event.LoggingAdapter;
+import akka.remote.AssociatedEvent;
+import akka.remote.AssociationEvent;
+import akka.remote.DisassociatedEvent;
 import demo.akka.messages.CleanDataMessage;
 import demo.akka.messages.DeleteSystemUserMessage;
 import demo.akka.messages.NewSystemUserMessage;
@@ -51,7 +54,9 @@ public class ApplicationActor extends UntypedActor {
                 MemberEvent.class,
                 MemberUp.class,
                 ReachableMember.class,
-                UnreachableMember.class);
+                UnreachableMember.class,
+                AssociationEvent.class,
+                DisassociatedEvent.class);
     }
 
     @Override
@@ -90,8 +95,13 @@ public class ApplicationActor extends UntypedActor {
         } else if (msg instanceof ReachableMember) {
             ReachableMember message = (ReachableMember) msg;
             LOG.info("[Member becomes reachable] Member: " + message.member().toString());
+        } else if (msg instanceof DisassociatedEvent) {
+            DisassociatedEvent message = (DisassociatedEvent) msg;
+            LOG.info("[DisassociatedEvent]. " + message.toString());
+        } else if (msg instanceof AssociatedEvent) {
+            AssociatedEvent message = (AssociatedEvent) msg;
+            LOG.info("[AssociatedEvent]. " + message.toString());
         }
-        LOG.info(" =================== [Message]   " + msg.toString());
     }
 
     public static Map<Integer, String> getUsers() {
