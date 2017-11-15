@@ -6,8 +6,9 @@ import akka.cluster.Cluster;
 import demo.akka.actor.ApplicationActor;
 import demo.akka.actor.UserActor;
 import demo.akka.messages.CleanDataMessage;
-import demo.akka.messages.DeleteUserMessage;
+import demo.akka.messages.DeleteSystemUserMessage;
 import demo.akka.messages.Message;
+import demo.akka.messages.NewSystemUserMessage;
 import demo.akka.messages.NewUserMessage;
 import demo.akka.util.DistributedSender;
 import demo.akka.util.Route;
@@ -36,12 +37,15 @@ public class MainController {
 
         final String actorSystemName = Cluster.get(actorSystem).selfAddress().toString();
 
-        Cluster.get(actorSystem).selfAddress();
+        final String path = Route.getName(UserActor.class, String.valueOf(memberId));
+        actorSystem.actorOf(Props.create(UserActor.class), path);
+
+        NewSystemUserMessage systemUserMessage = new NewSystemUserMessage();
+        systemUserMessage.setMemberId(memberId);
+        systemUserMessage.setActorRef(Route.getActorRef(ApplicationActor.class, ""));
+        sender.send(systemUserMessage);
 
         if (ApplicationActor.getActorSystem(memberId) == null) {
-            final String path = Route.getName(UserActor.class, String.valueOf(memberId));
-            actorSystem.actorOf(Props.create(UserActor.class), path);
-
             NewUserMessage message = new NewUserMessage();
             message.setMemberId(memberId);
             message.setSystemId(actorSystemName);
@@ -80,16 +84,22 @@ public class MainController {
         try {
             final int id = Integer.parseInt(memberId);
 
-            final DeleteUserMessage msg = new DeleteUserMessage();
+            // delete actor from system
+            final DeleteSystemUserMessage msg = new DeleteSystemUserMessage();
             msg.setActorRef(Route.getActorRef(UserActor.class, memberId));
             msg.setMemberId(id);
             sender.send(msg);
 
+            // removed from set of system users
+            msg.setActorRef(Route.getActorRef(ApplicationActor.class, ""));
+            sender.send(msg);
+
+            // removed from map of users on all nodes
             final CleanDataMessage cleanDataMessage = new CleanDataMessage();
             cleanDataMessage.setMemberId(id);
             sender.send(cleanDataMessage);
 
-            return "User removed";
+            return "User removed. Id = " + memberId;
         } catch (NumberFormatException e) {
             return e.getLocalizedMessage();
         }
@@ -106,7 +116,23 @@ public class MainController {
         for (Map.Entry<Integer, String> entry : ApplicationActor.getUsers().entrySet()) {
             builder.append("<tr>")
                     .append("<td>").append(entry.getKey()).append("</td>")
-                    .append("</td>").append(entry.getValue()).append("</td>")
+                    .append("<td>").append(entry.getValue()).append("</td>")
+                    .append("</tr>");
+        }
+        builder.append("</table>");
+        return builder.toString();
+    }
+
+    @RequestMapping("list")
+    public String getList() {
+        final StringBuilder builder = new StringBuilder("<table>");
+        builder.append("<tr>")
+                .append("<th>").append("MemberId").append("</th>")
+                .append("</tr>");
+
+        for (Integer user : ApplicationActor.getSystemUsers()) {
+            builder.append("<tr>")
+                    .append("<td>").append(user).append("</td>")
                     .append("</tr>");
         }
         builder.append("</table>");

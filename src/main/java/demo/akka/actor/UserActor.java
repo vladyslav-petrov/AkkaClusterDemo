@@ -6,7 +6,7 @@ import akka.cluster.pubsub.DistributedPubSub;
 import akka.cluster.pubsub.DistributedPubSubMediator;
 import akka.event.Logging;
 import akka.event.LoggingAdapter;
-import demo.akka.messages.DeleteUserMessage;
+import demo.akka.messages.DeleteSystemUserMessage;
 import demo.akka.messages.Message;
 
 /**
@@ -32,7 +32,7 @@ public class UserActor extends UntypedActor {
                     m.getBody(),
                     getSelf().path()));
 
-        } else if (msg instanceof DeleteUserMessage) {
+        } else if (msg instanceof DeleteSystemUserMessage) {
             LOG.info("User was successfully removed from actor system");
             getContext().system().stop(self());
         } else {

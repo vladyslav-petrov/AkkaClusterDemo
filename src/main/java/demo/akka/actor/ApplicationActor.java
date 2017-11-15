@@ -11,6 +11,8 @@ import akka.cluster.pubsub.DistributedPubSubMediator;
 import akka.event.Logging;
 import akka.event.LoggingAdapter;
 import demo.akka.messages.CleanDataMessage;
+import demo.akka.messages.DeleteSystemUserMessage;
+import demo.akka.messages.NewSystemUserMessage;
 import demo.akka.messages.NewUserMessage;
 
 import java.util.HashMap;
@@ -32,6 +34,8 @@ public class ApplicationActor extends UntypedActor {
     private final LoggingAdapter LOG = Logging.getLogger(getContext().system(), this);
 
     private static final Map<Integer, String> USERS = new HashMap<>();
+
+    private static final Set<Integer> SYSTEM_USERS = new HashSet<>();
 
     private Cluster cluster = Cluster.get(getContext().system());
 
@@ -60,6 +64,12 @@ public class ApplicationActor extends UntypedActor {
         if (msg instanceof NewUserMessage) {
             NewUserMessage message = (NewUserMessage) msg;
             USERS.put(message.getMemberId(), message.getSystemId());
+        } else if (msg instanceof NewSystemUserMessage) {
+            NewSystemUserMessage message = (NewSystemUserMessage) msg;
+            SYSTEM_USERS.add(message.getMemberId());
+        } else if (msg instanceof DeleteSystemUserMessage) {
+            DeleteSystemUserMessage message = (DeleteSystemUserMessage) msg;
+            SYSTEM_USERS.remove(message.getMemberId());
         } else if (msg instanceof CleanDataMessage) {
             CleanDataMessage message = (CleanDataMessage) msg;
             USERS.remove(message.getMemberId());
@@ -84,6 +94,10 @@ public class ApplicationActor extends UntypedActor {
 
     public static Map<Integer, String> getUsers() {
         return USERS;
+    }
+
+    public static Set<Integer> getSystemUsers() {
+        return SYSTEM_USERS;
     }
 
     public static Set<Integer> getSystemUsers(String actorSystem) {
