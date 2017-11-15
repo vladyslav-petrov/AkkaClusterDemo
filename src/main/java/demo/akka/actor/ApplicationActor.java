@@ -79,8 +79,9 @@ public class ApplicationActor extends UntypedActor {
             MemberUp event = (MemberUp) msg;
             Member member = event.member();
             final String memberAddress = member.address().toString();
+            final String localAddress = cluster.selfAddress().toString();
 
-            if (!ACTOR_SYSTEMS.containsKey(memberAddress)) {
+            if (!memberAddress.equals(localAddress) && !ACTOR_SYSTEMS.containsKey(memberAddress)) {
                 SystemData data = new SystemData();
                 data.setState(SystemData.State.ASSOCIATED);
                 ACTOR_SYSTEMS.put(memberAddress, data);
@@ -111,8 +112,9 @@ public class ApplicationActor extends UntypedActor {
         } else if (msg instanceof MemberRemoved) {
             MemberRemoved event = (MemberRemoved) msg;
             final String memberAddress = event.member().address().toString();
+            final String localAddress = cluster.selfAddress().toString();
 
-            if (ACTOR_SYSTEMS.containsKey(memberAddress)) {
+            if (!memberAddress.equals(localAddress) && ACTOR_SYSTEMS.containsKey(memberAddress)) {
                 ACTOR_SYSTEMS.remove(memberAddress);
                 LOG.info("================ MemberRemoved event. Node is dead");
             }
